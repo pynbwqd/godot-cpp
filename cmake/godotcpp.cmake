@@ -145,6 +145,12 @@ function(godotcpp_options)
         "Path to a custom GDExtension API JSON file (takes precedence over `GODOTCPP_GDEXTENSION_DIR` and `GODOTCPP_API_VERSION`) ( /path/to/custom_api_file )"
     )
 
+    set(GODOTCPP_BINDING_HOOK_FILE
+        ""
+        CACHE FILEPATH
+        "Path to a Python file defining custom binding generator hooks. The file has to contain a class named `CustomBindingGeneratorHooks`"
+    )
+
     #TODO generate_bindings
 
     option(GODOTCPP_GENERATE_TEMPLATE_GET_NODE "Generate a template version of the Node class's get_node. (ON|OFF)" ON)
@@ -264,17 +270,19 @@ function(godotcpp_generate)
     math(EXPR BITS "${CMAKE_SIZEOF_VOID_P} * 8") # CMAKE_SIZEOF_VOID_P refers to target architecture.
 
     # API json File
-    set(GODOTCPP_LATEST_API_VERSION "4.7")
-    if(GODOTCPP_API_VERSION STREQUAL "" OR GODOTCPP_API_VERSION STREQUAL GODOTCPP_LATEST_API_VERSION)
-        set(GODOTCPP_GDEXTENSION_API_FILE "${GODOTCPP_GDEXTENSION_DIR}/extension_api.json")
+    if(GODOTCPP_CUSTOM_API_FILE) # User-defined override.
+        set(GODOTCPP_GDEXTENSION_API_FILE "${GODOTCPP_CUSTOM_API_FILE}")
     else()
+        if(GODOTCPP_API_VERSION STREQUAL "")
+            set(GODOTCPP_API_VERSION "${GODOTCPP_DEFAULT_API_VERSION}")
+        endif()
+        if(GODOTCPP_API_VERSION STREQUAL "")
+            message(FATAL_ERROR "'GODOTCPP_API_VERSION' must be provided")
+        endif()
         string(REPLACE "." "-" GODOTCPP_API_VERSION_DASHED "${GODOTCPP_API_VERSION}")
         set(GODOTCPP_GDEXTENSION_API_FILE
             "${GODOTCPP_GDEXTENSION_DIR}/extension_api-${GODOTCPP_API_VERSION_DASHED}.json"
         )
-    endif()
-    if(GODOTCPP_CUSTOM_API_FILE) # User-defined override.
-        set(GODOTCPP_GDEXTENSION_API_FILE "${GODOTCPP_CUSTOM_API_FILE}")
     endif()
 
     # Interface json file.
@@ -309,6 +317,7 @@ function(godotcpp_generate)
             "${BITS}"
             "${GODOTCPP_PRECISION}"
             "${CMAKE_CURRENT_BINARY_DIR}"
+            "${GODOTCPP_BINDING_HOOK_FILE}"
     )
 
     ### Platform is derived from the toolchain target

@@ -199,7 +199,7 @@ struct EngineClassRegistration {
 // every line of the macro different
 #define GDCLASS(m_class, m_inherits) \
 private: \
-	void operator=(const m_class & /*p_rval*/) {} \
+	void operator=(const m_class &p_rval) = delete; \
 	friend class ::godot::ClassDB; \
 	friend class ::godot::Wrapped; \
 \
@@ -428,7 +428,7 @@ private:
 #define GDEXTENSION_CLASS_ALIAS(m_class, m_alias_for, m_inherits) \
 private: \
 	inline static ::godot::internal::EngineClassRegistration<m_class> _gde_engine_class_registration_helper; \
-	void operator=(const m_class &p_rval) {} \
+	void operator=(const m_class &p_rval) = delete; \
 	friend class ::godot::ClassDB; \
 	friend class ::godot::Wrapped; \
 \
@@ -498,7 +498,7 @@ public: \
 \
 	static void *_gde_binding_create_callback(void *p_token, void *p_instance) { \
 		/* Do not call memnew here, we don't want the post-initializer to be called */ \
-		return new ("", "") m_class((GodotObject *)p_instance); \
+		return new (::godot::DefaultAllocator{}) m_class((GodotObject *)p_instance); \
 	} \
 	static void _gde_binding_free_callback(void *p_token, void *p_instance, void *p_binding) { \
 		/* Explicitly call the deconstructor to ensure proper lifecycle for non-trivial members */ \
